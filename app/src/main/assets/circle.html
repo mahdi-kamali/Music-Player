@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+
+<head>
+
+  <meta charset="UTF-8">
+  
+<link rel="apple-touch-icon" type="image/png" href="https://cpwebassets.codepen.io/assets/favicon/apple-touch-icon-5ae1a0698dcc2402e9712f7d01ed509a57814f994c660df9f7a952f3060705ee.png" />
+<meta name="apple-mobile-web-app-title" content="CodePen">
+
+<link rel="shortcut icon" type="image/x-icon" href="https://cpwebassets.codepen.io/assets/favicon/favicon-aec34940fbc1a6e787974dcd360f2c6b63348d4b1f4e06c77743096d55480f33.ico" />
+
+<link rel="mask-icon" type="" href="https://cpwebassets.codepen.io/assets/favicon/logo-pin-8f3771b1072e3c38bd662872f6b673a722f4b3ca2421637d5596661b4e2132cc.svg" color="#111" />
+
+
+  <title>CodePen - Music Visualizer with p5js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  
+  
+<style>
+html, body {
+  background: black;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+#audiofile {
+  color: white;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+</style>
+
+  <script>
+  window.console = window.console || function(t) {};
+</script>
+
+  
+  
+  <script>
+  if (document.location.search.match(/type=embed/gi)) {
+    window.parent.postMessage("resize", "*");
+  }
+</script>
+
+
+</head>
+
+<body translate="no" >
+  <input id="audiofile" type="file" />
+    <script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-1b93190375e9ccc259df3a57c1abc0e64599724ae30d7ea4c6877eb615f89387.js"></script>
+
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/p5.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.8.0/addons/p5.sound.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js'></script>
+      <script id="rendered-js" >
+const fftStartingPoint = 0; //Where we want to start at the FFT, I don't even know if this is a good idea.
+const gradients = [
+{ start: [16, 141, 199], end: [239, 142, 56] },
+{ start: [247, 255, 0], end: [219, 54, 164] },
+{ start: [33, 95, 0], end: [228, 228, 217] },
+{ start: [222, 98, 98], end: [255, 184, 140] },
+{ start: [251, 211, 233], end: [187, 55, 125] },
+{ start: [67, 206, 162], end: [24, 90, 157] }];
+
+
+let startColor;
+let endColor;
+let rotateAngle = 0;
+let sound;
+let fft;
+
+function setup() {
+  const cnv = createCanvas(600, 600);
+
+  cnv.mouseClicked(() => {
+    if (sound && sound.isPlaying()) {
+      sound.pause();
+    } else if (sound && !sound.isPlaying()) {
+      sound.play();
+    }
+  });
+
+  fft = new p5.FFT(0.75);
+  colorMode(RGB);
+  startColor = color(0, 0, 0);
+  endColor = color(0, 0, 0);
+}
+
+function draw() {
+  background(0);
+  translate(width / 2, height / 2);
+
+  rotate(rotateAngle);
+  rotateAngle += 0.001;
+
+  noFill();
+  stroke(255);
+  ellipse(0, 0, 150, 150);
+
+  const spectrum = fft.analyze();
+  const spectrumValues = [];
+
+  for (let i = fftStartingPoint; i < (PI * 100 + fftStartingPoint) * 3; i += 3) {if (window.CP.shouldStopExecution(0)) break;
+    //Maybe take the average of all 3 for a line? someone help me do this better please!
+    spectrumValues.push((spectrum[i] + spectrum[i + 1], spectrum[i + 2]) / 3);
+  }window.CP.exitedLoop(0);
+
+  let count = 0;
+  let angle = 0.0;
+  let incrementPosRight = 0.0;
+  let incrementPosLeft = 0.0;
+  let increment = 0.0128;
+  let lerpy;
+
+  for (let i = 0; i < TWO_PI; i += 0.04) {if (window.CP.shouldStopExecution(1)) break;
+    const x = sin(i) * 80;
+    const y = cos(i) * 80;
+
+    if (i < PI) {
+      lerpy = lerpColor(startColor, endColor, incrementPosRight);
+      incrementPosRight += increment;
+    } else {
+      lerpy = lerpColor(endColor, startColor, incrementPosLeft);
+      incrementPosLeft += increment;
+    }
+
+    stroke(lerpy);
+    push();
+    translate(x, y);
+    rotate(-angle);
+    rect(0, 0, 1, map(spectrumValues[count], 0, 70, 2, 128));
+    pop();
+    count++;
+    angle += 0.04;
+  }window.CP.exitedLoop(1);
+}
+
+document.getElementById('audiofile').onchange = event => {
+  if (event.target.files[0]) {
+    if (sound && sound.isPlaying()) {
+      sound.disconnect();
+      sound.stop();
+    }
+
+    sound = loadSound(URL.createObjectURL(event.target.files[0]), () => {
+      const { start, end } = gradients[Math.floor(Math.random() * gradients.length)];
+
+      startColor = color(start[0], start[1], start[2]);
+      endColor = color(end[0], end[1], end[2]);
+
+      sound.play();
+    });
+  }
+};
+//# sourceURL=pen.js
+    </script>
+
+  
+
+</body>
+
+</html>
+ 
